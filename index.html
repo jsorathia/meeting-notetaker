@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Notetaker — GetOnCRM Solutions</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1565e8;
+  --blue2:#0d47c9;
+  --blue-light:#3d7cff;
+  --blue-glow:rgba(21,101,232,0.18);
+  --bg:#06080f;
+  --s1:#0c1020;
+  --s2:#111827;
+  --s3:#1a2236;
+  --s4:#243048;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --border-blue:rgba(21,101,232,0.4);
+  --text:#eef2ff;
+  --t2:#8b9cc8;
+  --t3:#4a5578;
+  --green:#22d3a0;
+  --g-bg:rgba(34,211,160,0.08);
+  --g-border:rgba(34,211,160,0.3);
+  --red:#f46f6f;
+  --r-bg:rgba(244,111,111,0.08);
+  --r-border:rgba(244,111,111,0.3);
+  --amber:#f5a623;
+  --am-bg:rgba(245,166,35,0.08);
+  --am-border:rgba(245,166,35,0.3);
+  --r:12px;--rs:8px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── TOP NAV ── */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:64px;
+  background:rgba(6,8,15,0.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.nav-logo img{height:36px;display:block;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.pill{display:flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;border:1px solid var(--border2);background:var(--s2);font-size:12px;font-weight:500;color:var(--t2);}
+.pill.rec{border-color:var(--r-border);background:var(--r-bg);color:var(--red);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--t3);}
+.dot.on{background:var(--green);animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.save-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3);padding:4px 10px;border-radius:99px;border:1px solid var(--border);}
+.save-badge.saved{color:var(--green);border-color:var(--g-border);}
+
+/* ── HERO ── */
+.hero{
+  text-align:center;
+  padding:4rem 1.5rem 3rem;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(21,101,232,0.12) 0%, transparent 70%);
+  border-bottom:1px solid var(--border);
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 14px;border-radius:99px;
+  background:var(--blue-glow);border:1px solid var(--border-blue);
+  font-size:12px;font-weight:500;color:var(--blue-light);
+  margin-bottom:1.25rem;
+}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-light);}
+.hero h1{font-size:clamp(26px,4vw,40px);font-weight:700;letter-spacing:-0.03em;line-height:1.15;margin-bottom:.75rem;}
+.hero h1 span{color:var(--blue-light);}
+.hero p{font-size:15px;color:var(--t2);max-width:520px;margin:0 auto 1.5rem;line-height:1.7;}
+.hero-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
+.hero-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:var(--s2);border:1px solid var(--border2);font-size:12px;color:var(--t2);}
+.hero-chip svg{width:13px;height:13px;color:var(--blue-light);}
+
+/* ── MAIN CONTENT ── */
+.main{max-width:940px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+/* ── BANNERS ── */
+.banner{border-radius:var(--r);padding:14px 18px;margin-bottom:14px;border:1px solid;}
+.banner.amber{background:var(--am-bg);border-color:var(--am-border);}
+.banner.green{background:var(--g-bg);border-color:var(--g-border);display:none;}
+.banner.blue-info{background:rgba(21,101,232,0.07);border-color:var(--border-blue);}
+.banner-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.banner.amber .banner-title{color:var(--amber);}
+.banner.green .banner-title{color:var(--green);}
+.banner.blue-info .banner-title{color:var(--blue-light);}
+.banner-sub{font-size:12px;color:var(--t2);line-height:1.6;}
+.banner-sub a{color:var(--amber);}
+.banner.green .banner-sub a,.banner.blue-info .banner-sub a{color:var(--blue-light);}
+.api-row{display:flex;gap:8px;margin-top:10px;}
+.api-row input{flex:1;padding:9px 13px;font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--s1);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);outline:none;}
+.api-row input:focus{border-color:var(--blue);}
+.btn-primary{padding:9px 18px;border-radius:var(--rs);background:var(--blue);border:none;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.btn-primary:hover{background:var(--blue2);}
+.btn-amber{padding:9px 18px;border-radius:var(--rs);background:var(--amber);border:none;color:#000;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-amber:hover{opacity:.85;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stat{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;position:relative;overflow:hidden;
+}
+.stat::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--blue-glow) 0%,transparent 60%);pointer-events:none;}
+.stat-n{font-size:28px;font-weight:700;letter-spacing:-0.04em;color:var(--text);}
+.stat-l{font-size:11px;color:var(--t3);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.5rem;margin-bottom:12px;
+}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;}
+.card-title-row{display:flex;align-items:center;gap:8px;}
+.card-title-icon{width:28px;height:28px;border-radius:7px;background:var(--blue-glow);border:1px solid var(--border-blue);display:flex;align-items:center;justify-content:center;}
+.card-title-icon svg{width:14px;height:14px;color:var(--blue-light);}
+
+/* ── ATTENDEES ── */
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:32px;align-items:center;}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 5px;border-radius:99px;background:rgba(21,101,232,0.1);border:1px solid var(--border-blue);font-size:12px;font-weight:500;color:var(--blue-light);}
+.av{width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.empty-note{font-size:12px;color:var(--t3);font-style:italic;}
+
+/* ── MIC SECTION ── */
+.mic-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.mic-btn{
+  display:flex;align-items:center;gap:9px;padding:10px 20px;
+  border-radius:var(--rs);border:1px solid var(--border2);
+  background:var(--s2);font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.mic-btn:hover{background:var(--s3);border-color:var(--border-blue);}
+.mic-btn.rec{background:var(--r-bg);border-color:var(--r-border);color:var(--red);}
+.mic-btn svg{width:16px;height:16px;flex-shrink:0;}
+.wave{flex:1;height:32px;display:flex;align-items:center;gap:2.5px;overflow:hidden;}
+.wb{width:3px;border-radius:2px;background:var(--s4);height:3px;transition:height .07s,background .15s;}
+
+/* ── TEXTAREA ── */
+textarea{
+  width:100%;min-height:220px;max-height:380px;
+  padding:14px 16px;font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;line-height:1.85;color:var(--text);
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--rs);resize:vertical;outline:none;transition:border-color .15s;
+}
+textarea:focus{border-color:var(--blue);}
+textarea::placeholder{color:var(--t3);}
+.tx-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;}
+.hint{font-size:11px;color:var(--t3);}
+
+.err-box{display:none;background:var(--r-bg);border:1px solid var(--r-border);border-radius:var(--rs);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red);line-height:1.5;}
+
+/* ── SEGMENTS ── */
+.seg-list{display:flex;flex-direction:column;gap:6px;}
+.seg-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);font-size:12px;}
+.seg-info{color:var(--t2);}
+.seg-info strong{color:var(--text);font-weight:500;}
+.seg-btns{display:flex;gap:6px;}
+
+/* ── AI ACTION BUTTONS ── */
+.actions{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+button{font-family:'Inter',sans-serif;cursor:pointer;}
+.abtn{
+  display:flex;align-items:center;gap:8px;padding:10px 18px;
+  border-radius:var(--rs);border:1px solid var(--border2);
+  background:var(--s2);font-size:13px;font-weight:500;color:var(--text);transition:all .15s;
+}
+.abtn:hover{background:var(--s3);border-color:var(--border-blue);}
+.abtn:disabled{opacity:.35;cursor:not-allowed;}
+.abtn svg{width:15px;height:15px;flex-shrink:0;}
+.abtn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.abtn.primary:hover{background:var(--blue2);border-color:var(--blue2);}
+
+.smbtn{font-size:11px;color:var(--t2);border:1px solid var(--border);background:var(--s2);padding:4px 10px;border-radius:6px;}
+.smbtn:hover{background:var(--s3);color:var(--text);}
+
+/* ── RESULTS ── */
+.rcard{display:none;margin-bottom:12px;}
+.rcard.show{display:block;}
+.rhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.rtitle{font-size:13px;font-weight:600;color:var(--text);}
+.rbody{
+  font-size:13px;line-height:1.85;color:var(--t2);
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:14px 16px;white-space:pre-wrap;min-height:60px;
+}
+.loading{display:flex;align-items:center;gap:10px;color:var(--t2);font-size:13px;}
+.spin{width:15px;height:15px;border:2px solid var(--s4);border-top-color:var(--blue-light);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{height:3px;background:var(--s3);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-light));border-radius:2px;transition:width .3s;width:0%;}
+
+/* ── DIVIDER ── */
+.section-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+
+.lang-select-wrap{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.lang-label{font-size:12px;color:var(--t2);white-space:nowrap;font-weight:500;}
+.lang-select{
+  flex:1;max-width:320px;padding:8px 12px;
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--rs);color:var(--text);font-size:13px;
+  font-family:'Inter',sans-serif;outline:none;cursor:pointer;
+}
+.lang-select:focus{border-color:var(--blue);}
+.lang-hint{font-size:11px;color:var(--t3);}
+
+
+.detecting-pulse{animation:detectPulse 1s ease-in-out infinite;}
+@keyframes detectPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── FOOTER ── */
+.footer{
+  border-top:1px solid var(--border);
+  padding:1.5rem;text-align:center;
+  font-size:12px;color:var(--t3);
+  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+}
+.footer img{height:22px;opacity:.5;}
+.footer a{color:var(--t3);}
+
+@media(max-width:650px){
+  .stats{grid-template-columns:1fr 1fr}
+  .actions{flex-direction:column}
+  .abtn{justify-content:center}
+  .nav{padding:0 1rem}
+  .hero{padding:2.5rem 1rem 2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <img style="background:#fff;padding:6px 10px;border-radius:8px;display:block;" src="data:image/webp;base64,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" alt="GetOnCRM Solutions" />
+  </div>
+  <div class="nav-right">
+    <div class="save-badge" id="save-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span id="save-txt">Not saved</span>
+    </div>
+    <div class="pill" id="pill"><div class="dot" id="dot"></div><span id="pill-txt">Idle</span></div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge"><div class="hero-badge-dot"></div>AI-Powered Meeting Intelligence</div>
+  <h1>Your meetings, <span>fully captured</span><br>and analyzed</h1>
+  <p>Record live, auto-save every 5 seconds, detect attendees, and get instant AI summaries — built for GetOnCRM teams.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Live mic transcription</div>
+    <div class="hero-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-save every 5s</div>
+    <div class="hero-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>2–3 hour meeting support</div>
+    <div class="hero-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Powered by Gemini AI · Free</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- API Key -->
+  <div class="banner amber" id="api-needs">
+    <div class="banner-title">Enter your Gemini API key to enable AI analysis</div>
+    <div class="banner-sub">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a> — sign in with Google → Create API key. No credit card needed. 1,500 free requests/day.</div>
+    <div class="api-row">
+      <input type="password" id="key-input" placeholder="AIza..." />
+      <button class="btn-amber" onclick="saveKey()">Save key</button>
+    </div>
+  </div>
+  <div class="banner green" id="api-ok">
+    <div class="banner-title">Gemini API connected — AI analysis ready</div>
+    <div class="banner-sub">Free tier active. Key stored in your browser only. <a href="#" onclick="resetKey();return false;">Change key</a></div>
+  </div>
+
+  <!-- Recovered session -->
+  <div class="banner blue-info" id="recover-banner" style="display:none;">
+    <div class="banner-title">Previous session found</div>
+    <div class="banner-sub" id="recover-sub"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="wc">0</div><div class="stat-l">Words captured</div></div>
+    <div class="stat"><div class="stat-n" id="dur">0:00</div><div class="stat-l">Duration</div></div>
+    <div class="stat"><div class="stat-n" id="ac">0</div><div class="stat-l">Attendees</div></div>
+    <div class="stat"><div class="stat-n" id="sc">0</div><div class="stat-l">Segments</div></div>
+  </div>
+
+  <!-- Attendees -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <div class="card-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <span class="card-title">Detected attendees</span>
+      </div>
+    </div>
+    <div class="chips" id="chips"><span class="empty-note">Names appear automatically as people speak...</span></div>
+  </div>
+
+  <!-- Transcript -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <div class="card-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+        <span class="card-title">Live transcript</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:11px;color:var(--t3);" id="seg-info"></span>
+        <button class="smbtn" onclick="saveSegment()" title="Save this portion and clear for next 30-45 min block">Save segment</button>
+      </div>
+    </div>
+    <div class="lang-select-wrap">
+      <span class="lang-label">Language:</span>
+      <select id="lang-select" class="lang-select" onchange="onLangChange()">
+        <option value="auto" selected>Auto-detect</option>
+        <option value="en-US">English</option>
+        <option value="hi-IN">Hindi (हिन्दी)</option>
+        <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+        <option value="en-IN">English (India)</option>
+      </select>
+      <span class="lang-hint" id="lang-hint-txt">
+        <span id="lang-detected-badge" style="display:none;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:var(--blue-glow);border:1px solid var(--border-blue);font-size:11px;color:var(--blue-light);">
+          <span id="lang-detected-txt"></span>
+        </span>
+        <span id="lang-status-txt">Auto-detect on</span>
+      </span>
+    </div>
+    <div class="mic-row">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        <span id="mic-lbl">Start recording</span>
+      </button>
+      <div class="wave" id="wave"></div>
+    </div>
+    <div class="err-box" id="err-box"></div>
+    <textarea id="tx" placeholder="Your transcript will appear here in real time as you speak. For meetings over 45 minutes, click 'Save segment' every 30–45 minutes to keep chunks manageable for AI analysis."></textarea>
+    <div class="tx-foot">
+      <span class="hint" id="hint">Click Start recording — Chrome or Edge required for live transcription</span>
+      <div style="display:flex;gap:6px;">
+        <button class="smbtn" onclick="exportTranscript()">Export .txt</button>
+        <button class="smbtn" onclick="clearAll()" style="color:var(--red)">Clear all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segments -->
+  <div class="card" id="seg-card" style="display:none;">
+    <div class="card-header">
+      <div class="card-title-row">
+        <div class="card-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+        <span class="card-title">Saved segments</span>
+      </div>
+      <span style="font-size:11px;color:var(--t3);" id="seg-total-words"></span>
+    </div>
+    <div class="seg-list" id="seg-list"></div>
+  </div>
+
+  <!-- AI Actions -->
+  <div class="section-label">AI analysis</div>
+  <div class="actions">
+    <button class="abtn primary" id="btn-summary" onclick="runAI('summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Summarize meeting
+    </button>
+    <button class="abtn" id="btn-actions" onclick="runAI('actions')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Extract action items
+    </button>
+    <button class="abtn" id="btn-email" onclick="runAI('email')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Draft follow-up email
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div class="card rcard" id="r-summary">
+    <div class="rhdr"><div class="rtitle">Meeting summary</div><button class="smbtn" onclick="cp('b-summary',this)">Copy</button></div>
+    <div class="progress-bar"><div class="progress-fill" id="p-summary"></div></div>
+    <div class="rbody" id="b-summary"></div>
+  </div>
+  <div class="card rcard" id="r-actions">
+    <div class="rhdr"><div class="rtitle">Action items</div><button class="smbtn" onclick="cp('b-actions',this)">Copy</button></div>
+    <div class="progress-bar"><div class="progress-fill" id="p-actions"></div></div>
+    <div class="rbody" id="b-actions"></div>
+  </div>
+  <div class="card rcard" id="r-email">
+    <div class="rhdr"><div class="rtitle">Follow-up email</div><button class="smbtn" onclick="cp('b-email',this)">Copy</button></div>
+    <div class="progress-bar"><div class="progress-fill" id="p-email"></div></div>
+    <div class="rbody" id="b-email"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- FOOTER -->
+<footer class="footer">
+  <img style="background:#fff;padding:6px 10px;border-radius:8px;display:block;" src="data:image/webp;base64,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" alt="GetOnCRM Solutions" />
+  <span>© 2025 GetOnCRM Solutions · Meeting Notetaker · Powered by Gemini AI</span>
+</footer>
+
+<script>
+var final='',recog=null,recording=false,t0=null,durInt=null,waveInt=null,saveInt=null;
+var watchdogTimer=null,lastResultTime=0,WATCHDOG_MS=3000;
+var names=new Set(),segments=[];
+var tx=document.getElementById('tx');
+var apiKey=localStorage.getItem('gemini_key')||'';
+
+var waveEl=document.getElementById('wave');
+for(var i=0;i<32;i++){var b=document.createElement('div');b.className='wb';waveEl.appendChild(b);}
+var bars=document.querySelectorAll('.wb');
+
+if(apiKey)showKeyOk();
+checkSavedSession();
+startAutoSave();
+
+function saveKey(){var v=document.getElementById('key-input').value.trim();if(!v){alert('Please paste your Gemini API key.');return;}apiKey=v;localStorage.setItem('gemini_key',v);showKeyOk();}
+function showKeyOk(){document.getElementById('api-needs').style.display='none';document.getElementById('api-ok').style.display='block';}
+function resetKey(){apiKey='';localStorage.removeItem('gemini_key');document.getElementById('api-ok').style.display='none';document.getElementById('api-needs').style.display='block';document.getElementById('key-input').value='';}
+
+function startAutoSave(){
+  if(saveInt)clearInterval(saveInt);
+  saveInt=setInterval(function(){
+    if(!tx.value.trim()&&!segments.length)return;
+    var data={transcript:tx.value,final:final,segments:segments,names:Array.from(names),duration:document.getElementById('dur').textContent,savedAt:new Date().toISOString()};
+    localStorage.setItem('mn_session',JSON.stringify(data));
+    setSaveBadge(true);
+  },5000);
+}
+function setSaveBadge(saved){
+  var badge=document.getElementById('save-badge'),txt=document.getElementById('save-txt');
+  if(saved){badge.classList.add('saved');txt.textContent='Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  else{badge.classList.remove('saved');txt.textContent='Not saved';}
+}
+function checkSavedSession(){
+  var raw=localStorage.getItem('mn_session');if(!raw)return;
+  try{
+    var data=JSON.parse(raw);
+    if(!data.transcript&&!(data.segments&&data.segments.length))return;
+    var wc=data.transcript?data.transcript.trim().split(/\s+/).length:0;
+    var sc=data.segments?data.segments.length:0;
+    var savedAt=new Date(data.savedAt).toLocaleString();
+    document.getElementById('recover-sub').innerHTML='Session from <strong>'+savedAt+'</strong> — '+wc+' words, '+sc+' segments. <a href="#" onclick="loadSaved();return false;">Restore</a> or <a href="#" onclick="discardSaved();return false;">discard</a>.';
+    document.getElementById('recover-banner').style.display='block';
+  }catch(e){}
+}
+function loadSaved(){
+  var raw=localStorage.getItem('mn_session');if(!raw)return;
+  try{
+    var data=JSON.parse(raw);
+    tx.value=data.transcript||'';final=data.final||data.transcript||'';
+    segments=data.segments||[];
+    if(data.names)data.names.forEach(function(n){names.add(n);});
+    updateStats();renderNames();renderSegments();
+    document.getElementById('recover-banner').style.display='none';
+    setSaveBadge(true);
+    setHint('Session restored — '+final.trim().split(/\s+/).length+' words loaded.');
+  }catch(e){alert('Could not restore session.');}
+}
+function discardSaved(){localStorage.removeItem('mn_session');document.getElementById('recover-banner').style.display='none';}
+
+function saveSegment(){
+  var content=tx.value.trim();if(!content){alert('Nothing to save yet.');return;}
+  var idx=segments.length+1,wc=content.split(/\s+/).length;
+  segments.push({label:'Segment '+idx,text:content,words:wc,time:document.getElementById('dur').textContent});
+  renderSegments();final='';tx.value='';updateStats();
+  setHint('Segment '+idx+' saved ('+wc+' words). Continue recording...');
+}
+function renderSegments(){
+  var card=document.getElementById('seg-card'),list=document.getElementById('seg-list');
+  if(!segments.length){card.style.display='none';return;}
+  card.style.display='block';list.innerHTML='';
+  var totalWords=segments.reduce(function(s,g){return s+g.words;},0)+(final.trim()?final.trim().split(/\s+/).length:0);
+  document.getElementById('seg-total-words').textContent='Total: ~'+totalWords.toLocaleString()+' words';
+  document.getElementById('sc').textContent=segments.length;
+  segments.forEach(function(seg,i){
+    var row=document.createElement('div');row.className='seg-item';
+    row.innerHTML='<span class="seg-info"><strong>'+seg.label+'</strong> — '+seg.words.toLocaleString()+' words @ '+seg.time+'</span><div class="seg-btns"><button class="smbtn" onclick="viewSeg('+i+')">View</button><button class="smbtn" onclick="delSeg('+i+')" style="color:var(--red)">Delete</button></div>';
+    list.appendChild(row);
+  });
+}
+function viewSeg(i){var w=window.open('','_blank','width=700,height=500');w.document.write('<pre style="font-family:monospace;padding:20px;white-space:pre-wrap;background:#06080f;color:#eef2ff;">'+segments[i].label+'\n\n'+segments[i].text+'</pre>');}
+function delSeg(i){if(!confirm('Delete '+segments[i].label+'?'))return;segments.splice(i,1);segments.forEach(function(s,j){s.label='Segment '+(j+1);});renderSegments();}
+function getAllText(){
+  var parts=segments.map(function(s){return '=== '+s.label+' ===\n'+s.text;});
+  var cur=tx.value.trim();if(cur)parts.push(segments.length?'=== Segment '+(segments.length+1)+' (current) ===\n'+cur:cur);
+  return parts.join('\n\n');
+}
+
+function initRecog(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showErr('Speech recognition requires Chrome or Edge.');return null;}
+  var r=new SR();r.continuous=true;r.interimResults=true;var sel=document.getElementById('lang-select').value;
+  r.lang = (sel==='auto') ? (detectedLang || 'hi-IN') : sel;
+  r.onstart=function(){
+    clearErr();lastResultTime=Date.now();setHint('Mic active — speak now...');
+    clearTimeout(watchdogTimer);
+    watchdogTimer=setTimeout(function(){if(recording){try{r.stop();}catch(x){}}},WATCHDOG_MS);
+  };
+  r.onresult=function(e){
+    lastResultTime=Date.now();
+    clearTimeout(watchdogTimer);
+    watchdogTimer=setTimeout(function(){if(recording){try{r.stop();}catch(x){}}},WATCHDOG_MS);
+    var interim='';
+    for(var i=e.resultIndex;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal){final+=t+' ';scanNames(final);}else interim=t;}
+    tx.value=final+interim;tx.scrollTop=tx.scrollHeight;updateStats();
+    // auto language detection trigger
+    if(document.getElementById('lang-select').value==='auto' && !autoDetectDone){
+      wordsForDetection = final.trim();
+      var wcount = wordsForDetection.split(/\s+/).length;
+      if(wcount >= DETECTION_THRESHOLD){ autoDetectLanguage(wordsForDetection); }
+    }
+    var wc=final.trim()?final.trim().split(/\s+/).length:0;
+    if(wc>0&&wc%1000===0)setHint('Tip: '+wc+' words captured — consider clicking Save segment.');
+    else setHint('Transcribing — '+wc+' words in current segment');
+  };
+  r.onerror=function(e){
+    var msgs={'not-allowed':'Microphone access denied. Click the lock icon in your address bar → allow microphone → try again.','no-speech':'No speech detected. Check your microphone.','network':'Network error with speech service.'};
+    showErr(msgs[e.error]||'Mic error: '+e.error);stopRec();
+  };
+  r.onend=function(){
+    if(recording){
+      clearTimeout(watchdogTimer);
+      setTimeout(function(){
+        try{r.start();}catch(x){recog=null;recog=initRecog();if(recog)try{recog.start();}catch(e){};}
+      },150);
+    }
+  };
+  return r;
+}
+
+var detectedLang = null;
+var autoDetectDone = false;
+var wordsForDetection = '';
+var DETECTION_THRESHOLD = 12; // detect after this many words
+
+var LANG_MAP = {
+  'en-US':   { label: 'English',           flag: 'EN' },
+  'hi-IN':   { label: 'Hindi (हिन्दी)',    flag: 'HI' },
+  'gu-IN':   { label: 'Gujarati (ગુજ.)',   flag: 'GU' },
+  'en-IN':   { label: 'English (India)',    flag: 'EN' }
+};
+
+function onLangChange(){
+  var val = document.getElementById('lang-select').value;
+  if(val === 'auto'){
+    document.getElementById('lang-status-txt').textContent = 'Auto-detect on';
+    document.getElementById('lang-detected-badge').style.display = 'none';
+    resetAutoDetect();
+  } else {
+    document.getElementById('lang-status-txt').textContent = '';
+    showDetectedBadge(val);
+    resetAutoDetect();
+    detectedLang = val;
+    autoDetectDone = true;
+  }
+  if(recording && recog){ recog.stop(); recog=null; setTimeout(function(){ recog=initRecog(); if(recog){try{recog.start();}catch(x){}} },300); }
+}
+
+function resetAutoDetect(){
+  autoDetectDone = false;
+  detectedLang = null;
+  wordsForDetection = '';
+}
+
+function showDetectedBadge(lang){
+  var info = LANG_MAP[lang];
+  if(!info) return;
+  var badge = document.getElementById('lang-detected-badge');
+  var txt = document.getElementById('lang-detected-txt');
+  txt.textContent = 'Detected: ' + info.label;
+  badge.style.display = 'inline-flex';
+  badge.classList.remove('detecting-pulse');
+}
+
+function showDetectingBadge(){
+  var badge = document.getElementById('lang-detected-badge');
+  var txt = document.getElementById('lang-detected-txt');
+  txt.textContent = 'Detecting language...';
+  badge.style.display = 'inline-flex';
+  badge.classList.add('detecting-pulse');
+  document.getElementById('lang-status-txt').textContent = '';
+}
+
+async function autoDetectLanguage(text){
+  if(!apiKey || autoDetectDone) return;
+  autoDetectDone = true; // prevent multiple calls
+  showDetectingBadge();
+  try {
+    var prompt = 'Identify the primary language of this text. Reply with ONLY one of these exact codes: en-US, hi-IN, gu-IN, en-IN. Text: "' + text.slice(0,200) + '"';
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+    var res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:10,temperature:0}})
+    });
+    var d = await res.json();
+    var raw = '';
+    if(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts[0])
+      raw = d.candidates[0].content.parts[0].text.trim();
+    var valid = ['en-US','hi-IN','gu-IN','en-IN'];
+    // find any valid code in the response
+    var found = valid.find(function(c){ return raw.indexOf(c) !== -1; }) || 'en-US';
+    detectedLang = found;
+    showDetectedBadge(found);
+    // restart recognition with detected language
+    if(recording && recog){
+      recog.stop(); recog = null;
+      setTimeout(function(){
+        recog = initRecog();
+        if(recog){ try{ recog.start(); }catch(x){} }
+      }, 300);
+    }
+  } catch(e) {
+    autoDetectDone = false; // allow retry
+    document.getElementById('lang-detected-badge').style.display = 'none';
+    document.getElementById('lang-status-txt').textContent = 'Auto-detect on';
+  }
+}
+
+function toggleMic(){
+  if(!recording){
+    if(!recog)recog=initRecog();if(!recog)return;
+    try{
+      recog.start();recording=true;
+      document.getElementById('mic-btn').classList.add('rec');
+      document.getElementById('mic-lbl').textContent='Stop recording';
+      document.getElementById('pill').classList.add('rec');
+      document.getElementById('dot').classList.add('on');
+      document.getElementById('pill-txt').textContent='Recording';
+      if(document.getElementById('lang-select').value==='auto'){ resetAutoDetect(); document.getElementById('lang-detected-badge').style.display='none'; document.getElementById('lang-status-txt').textContent='Auto-detect on'; }
+      if(!t0)t0=Date.now();
+      durInt=setInterval(function(){
+        var s=Math.floor((Date.now()-t0)/1000);
+        document.getElementById('dur').textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+s%60;
+        if(s>0&&s%1800===0)setHint('30 minutes reached — save a segment now for best AI results.');
+      },1000);
+      animateWave(true);
+    }catch(x){showErr('Could not start mic: '+x.message);}
+  }else{stopRec();}
+}
+function stopRec(){
+  clearTimeout(watchdogTimer);watchdogTimer=null;
+  if(recog)recog.stop();recording=false;
+  document.getElementById('mic-btn').classList.remove('rec');
+  document.getElementById('mic-lbl').textContent='Start recording';
+  document.getElementById('pill').classList.remove('rec');
+  document.getElementById('dot').classList.remove('on');
+  document.getElementById('pill-txt').textContent='Idle';
+  clearInterval(durInt);animateWave(false);tx.value=final;
+  var wc=final.trim()?final.trim().split(/\s+/).length:0;
+  setHint('Stopped — '+wc+' words. Use the AI buttons below.');
+}
+function animateWave(on){
+  if(waveInt)clearInterval(waveInt);
+  if(!on){bars.forEach(function(b){b.style.height='3px';b.style.background='var(--s4)';});return;}
+  waveInt=setInterval(function(){bars.forEach(function(b){b.style.height=(Math.random()*24+3)+'px';b.style.background='var(--blue-light)';});},70);
+}
+function updateStats(){var wc=final.trim()?final.trim().split(/\s+/).length:0;document.getElementById('wc').textContent=wc.toLocaleString();}
+function setHint(m){document.getElementById('hint').textContent=m;}
+function showErr(m){var e=document.getElementById('err-box');e.style.display='block';e.textContent=m;}
+function clearErr(){document.getElementById('err-box').style.display='none';}
+
+var skipW=new Set(['The','This','That','Here','There','When','What','How','Why','Who','But','And','For','With','From','They','Their','Then','Also','Just','Very','Its','Our','Your','Her','His','Monday','Tuesday','Wednesday','Thursday','Friday','January','February','March','April','May','June','July','August','September','October','November','December']);
+function scanNames(txt){
+  var prev=names.size;
+  [[/\b([A-Z][a-z]{1,14}) ([A-Z][a-z]{1,14})\b/g,true],[/(?:^|\n) *([A-Z][a-z]{1,14}):/gm,false],[/(?:this is|I'm|I am|my name is|hi I'm) ([A-Z][a-z]{1,14}(?: [A-Z][a-z]{1,14})?)/gi,false],[/\b([A-Z][a-z]{2,14}) (?:said|mentioned|asked|agreed|noted|confirmed|suggested)\b/g,false]].forEach(function(p){
+    var re=p[0],two=p[1],m;
+    while((m=re.exec(txt))!==null){var n=(two&&m[2]?m[1]+' '+m[2]:m[1]).trim();if(n.length>2&&!skipW.has(n.split(' ')[0])&&!names.has(n))names.add(n);}
+  });
+  if(names.size!==prev)renderNames();
+}
+function renderNames(){
+  var el=document.getElementById('chips');el.innerHTML='';
+  if(!names.size){el.innerHTML='<span class="empty-note">Names appear automatically as people speak...</span>';document.getElementById('ac').textContent='0';return;}
+  names.forEach(function(n){var c=document.createElement('div');c.className='chip';var a=document.createElement('div');a.className='av';a.textContent=n.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();var l=document.createElement('span');l.textContent=n;c.appendChild(a);c.appendChild(l);el.appendChild(c);});
+  document.getElementById('ac').textContent=names.size;
+}
+tx.addEventListener('input',function(){final=tx.value;updateStats();scanNames(tx.value);});
+
+function exportTranscript(){
+  var all=getAllText();if(!all){alert('Nothing to export.');return;}
+  var blob=new Blob([all],{type:'text/plain'});var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='meeting-'+new Date().toISOString().slice(0,10)+'.txt';a.click();
+}
+function clearAll(){
+  if(!confirm('Clear everything — transcript, segments, and results?'))return;
+  final='';tx.value='';segments=[];names.clear();renderNames();renderSegments();
+  document.getElementById('wc').textContent='0';document.getElementById('dur').textContent='0:00';document.getElementById('sc').textContent='0';
+  t0=null;setHint('Click Start recording — Chrome or Edge required');
+  ['r-summary','r-actions','r-email'].forEach(function(id){document.getElementById(id).classList.remove('show');});
+  localStorage.removeItem('mn_session');setSaveBadge(false);
+}
+
+async function callGemini(prompt){
+  var url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey;
+  var res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500,temperature:0.3}})});
+  var d=await res.json();
+  if(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts[0])return d.candidates[0].content.parts[0].text;
+  if(d.error)throw new Error(d.error.message);
+  throw new Error('No response from Gemini');
+}
+async function summarizeChunks(chunks,pid){
+  var fill=document.getElementById(pid),summaries=[];
+  for(var i=0;i<chunks.length;i++){
+    fill.style.width=Math.round(((i+1)/chunks.length)*80)+'%';
+    var s=await callGemini('Briefly summarize key points, decisions, and action items from this meeting portion (part '+(i+1)+' of '+chunks.length+'):\n\n'+chunks[i]);
+    summaries.push('Part '+(i+1)+':\n'+s);
+  }
+  fill.style.width='90%';return summaries.join('\n\n');
+}
+async function runAI(type){
+  var allText=getAllText();
+  if(!allText.trim()){alert('No transcript yet — start recording first!');return;}
+  if(!apiKey){alert('Please enter your Gemini API key first.');return;}
+  var nameList=Array.from(names).slice(0,6).join(', ')||'the team';
+  var totalWords=allText.trim().split(/\s+/).length;
+  var LIMIT=6000,needsChunking=totalWords>LIMIT;
+  document.getElementById('r-'+type).classList.add('show');
+  var bodyEl=document.getElementById('b-'+type),btnEl=document.getElementById('btn-'+type),fill=document.getElementById('p-'+type);
+  fill.style.width='0%';btnEl.disabled=true;
+  var cfgs={
+    summary:{sys:'You are a meeting analyst for GetOnCRM Solutions. Write a structured meeting summary with three labeled sections:\n"Topics discussed"\n"Key decisions"\n"Notable points"\n3-5 sentences each. Be direct.',chunkSys:'Based on these meeting summaries, write a complete final summary with three sections: "Topics discussed", "Key decisions", "Notable points". Be specific.',pfx:'Meeting transcript:\n\n'},
+    actions:{sys:'Extract ALL action items. Format each as:\n[ ] Owner (if known): Task — by deadline (if mentioned)\nUse "Unassigned" if no owner. Group by owner.',chunkSys:'From these summaries, extract ALL action items across the entire meeting.\n[ ] Owner: Task — deadline\nGroup by owner. No duplicates.',pfx:'Meeting transcript:\n\n'},
+    email:{sys:'Write a concise professional follow-up email for a meeting with '+nameList+'.\nInclude: subject line, brief recap, key decisions, action items, warm close.\nPlain text only.',chunkSys:'Based on these meeting summaries, write a professional follow-up email for a meeting with '+nameList+'.\nSubject line, brief recap, key decisions, action items, warm close. Plain text.',pfx:'Meeting transcript:\n\n'}
+  };
+  var cfg=cfgs[type];
+  try{
+    var result;
+    if(!needsChunking){
+      bodyEl.innerHTML='<div class="loading"><div class="spin"></div><span>Analyzing with Gemini AI...</span></div>';
+      fill.style.width='40%';
+      result=await callGemini(cfg.sys+'\n\n'+cfg.pfx+allText);
+      fill.style.width='100%';
+    }else{
+      bodyEl.innerHTML='<div class="loading"><div class="spin"></div><span>Long meeting ('+totalWords.toLocaleString()+' words) — analyzing in chunks...</span></div>';
+      var words=allText.split(/\s+/),chunks=[];
+      for(var i=0;i<words.length;i+=LIMIT)chunks.push(words.slice(i,i+LIMIT).join(' '));
+      var combined=await summarizeChunks(chunks,'p-'+type);
+      bodyEl.innerHTML='<div class="loading"><div class="spin"></div><span>Synthesizing final result...</span></div>';
+      result=await callGemini(cfg.chunkSys+'\n\nPer-section summaries:\n\n'+combined);
+      fill.style.width='100%';
+    }
+    bodyEl.textContent=result;
+  }catch(e){bodyEl.textContent='Error: '+e.message+'\n\nCheck your Gemini API key and try again.';fill.style.width='0%';}
+  btnEl.disabled=false;
+}
+function cp(id,btn){navigator.clipboard.writeText(document.getElementById(id).textContent).catch(function(){});btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);}
+</script>
+</body>
+</html>
