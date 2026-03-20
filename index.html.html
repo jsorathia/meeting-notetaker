@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Notetaker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f4f0; --surface: #ffffff; --surface2: #f0efe9;
+    --border: #e2e0d8; --border2: #cccabe;
+    --text: #1a1916; --text2: #6b6960; --text3: #9b9a91;
+    --accent: #2d5be3; --accent-bg: #eef2fd; --accent-border: #c5d0f7;
+    --red: #dc2626; --red-bg: #fef2f2;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 40px; height: 40px; background: var(--accent); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+  .app-name { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .app-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .status-pill { display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 500; color: var(--text2); }
+  .status-pill.recording { border-color: #fca5a5; background: var(--red-bg); color: var(--red); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+  .dot.live { background: #22c55e; animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:.35} }
+
+  .info-box { background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .info-box strong { color: var(--accent); }
+  .info-box ol { padding-left: 18px; margin-top: 6px; }
+  .info-box li { margin-bottom: 3px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .stat-num { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 12px; }
+  .card-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+
+  .attendee-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 99px; background: var(--accent-bg); border: 1px solid var(--accent-border); font-size: 12px; font-weight: 500; color: var(--accent); }
+  .chip-av { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .empty { font-size: 12px; color: var(--text3); font-style: italic; }
+
+  .mic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .mic-btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .mic-btn:hover { background: var(--surface2); }
+  .mic-btn.recording { background: var(--red-bg); border-color: #fca5a5; color: var(--red); }
+  .mic-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .waveform { flex: 1; height: 32px; display: flex; align-items: center; gap: 2.5px; overflow: hidden; }
+  .wb { width: 3px; border-radius: 2px; background: var(--border2); height: 3px; transition: height .08s, background .2s; }
+
+  textarea { width: 100%; min-height: 200px; max-height: 300px; padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.75; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); resize: vertical; outline: none; }
+  textarea:focus { border-color: var(--accent); }
+  .tx-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .tx-hint { font-size: 11px; color: var(--text3); }
+  .sm-btn { font-size: 11px; color: var(--text2); border: 1px solid var(--border); background: var(--surface2); padding: 3px 10px; border-radius: var(--radius-sm); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .sm-btn:hover { background: var(--border); }
+
+  .actions-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .action-btn { display: flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; transition: all .15s; }
+  .action-btn:hover { background: var(--surface2); }
+  .action-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .action-btn.primary:hover { background: #2450cc; }
+  .action-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .result-card { display: none; }
+  .result-card.visible { display: block; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .result-title { font-size: 13px; font-weight: 600; }
+  .result-body { font-size: 13px; line-height: 1.8; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; white-space: pre-wrap; min-height: 60px; }
+  .loading-row { display: flex; align-items: center; gap: 10px; color: var(--text2); font-size: 13px; }
+  .spinner { width: 15px; height: 15px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #no-support { display: none; font-size: 13px; color: var(--red); margin-bottom: 10px; padding: 8px 12px; background: var(--red-bg); border-radius: var(--radius-sm); border: 1px solid #fca5a5; }
+
+  /* Prompt copy area */
+  .prompt-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--text2); line-height: 1.6; font-family: 'DM Mono', monospace; white-space: pre-wrap; margin-top: 8px; max-height: 120px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="9" stroke="white" stroke-width="1.8"/>
+          <path d="M11 6v5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="app-name">Meeting Notetaker</div>
+        <div class="app-sub">Live mic transcription · No API key needed</div>
+      </div>
+    </div>
+    <div class="status-pill" id="status-pill">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">Idle</span>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>How this works:</strong>
+    <ol>
+      <li>Open this file in <strong>Chrome or Edge</strong> — required for live mic transcription</li>
+      <li>Click <strong>Start recording</strong> and allow mic access when prompted</li>
+      <li>Speak naturally — transcript builds in real time</li>
+      <li>When done, click an AI button — it copies the prompt for you to paste into <strong>Claude.ai</strong></li>
+    </ol>
+    <div style="margin-top:6px;color:#1a1916;font-size:12px;">The AI buttons generate a ready-to-use prompt you paste into Claude.ai — completely free, no API key, no payment.</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" id="word-count">0</div><div class="stat-label">words captured</div></div>
+    <div class="stat-card"><div class="stat-num" id="duration">0:00</div><div class="stat-label">recording time</div></div>
+    <div class="stat-card"><div class="stat-num" id="attendee-count">0</div><div class="stat-label">attendees detected</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Detected attendees</div>
+    <div class="attendee-row" id="attendee-list"><span class="empty">Names appear as people are mentioned...</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Live transcript</div>
+    <div class="mic-row">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span id="mic-label">Start recording</span>
+      </button>
+      <div class="waveform" id="waveform"></div>
+    </div>
+    <div id="no-support">Speech recognition requires Chrome or Edge. Other browsers do not support the Web Speech API.</div>
+    <textarea id="tx" placeholder="Your transcript will appear here in real time as you speak..."></textarea>
+    <div class="tx-footer">
+      <span class="tx-hint" id="tx-hint">Click Start recording to begin</span>
+      <button class="sm-btn" onclick="clearAll()">Clear all</button>
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button class="action-btn primary" id="btn-summary" onclick="preparePrompt('summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Summarize meeting
+    </button>
+    <button class="action-btn" id="btn-actions" onclick="preparePrompt('actions')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Extract action items
+    </button>
+    <button class="action-btn" id="btn-email" onclick="preparePrompt('email')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Draft follow-up email
+    </button>
+  </div>
+
+  <div class="card result-card" id="result-prompt">
+    <div class="result-header">
+      <div class="result-title" id="prompt-title">Prompt ready</div>
+      <div style="display:flex;gap:8px">
+        <button class="sm-btn" id="copy-prompt-btn" onclick="copyPromptText()">Copy prompt</button>
+        <a href="https://claude.ai" target="_blank" style="text-decoration:none">
+          <button class="sm-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)">Open Claude.ai</button>
+        </a>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Copy this prompt, open Claude.ai, and paste it into the chat:</div>
+    <div class="prompt-box" id="prompt-box"></div>
+  </div>
+
+</div>
+
+<script>
+var finalTranscript = '';
+var recognition = null;
+var isRecording = false;
+var startTime = null;
+var durationInterval = null;
+var waveInterval = null;
+var attendees = new Set();
+var tx = document.getElementById('tx');
+var currentPrompt = '';
+
+var wf = document.getElementById('waveform');
+for (var i = 0; i < 28; i++) { var b = document.createElement('div'); b.className = 'wb'; wf.appendChild(b); }
+var waveBars = document.querySelectorAll('.wb');
+
+function setupRecognition() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { document.getElementById('no-support').style.display = 'block'; return null; }
+  var r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = 'en-US';
+  r.onresult = function(e) {
+    var interim = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      var t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) { finalTranscript += t + ' '; detectAttendees(finalTranscript); }
+      else interim = t;
+    }
+    tx.value = finalTranscript + interim;
+    tx.scrollTop = tx.scrollHeight;
+    var wc = finalTranscript.trim() ? finalTranscript.trim().split(/\s+/).length : 0;
+    document.getElementById('word-count').textContent = wc;
+    document.getElementById('tx-hint').textContent = 'Transcribing live — ' + wc + ' words...';
+  };
+  r.onerror = function(e) {
+    document.getElementById('tx-hint').textContent = 'Mic error: ' + e.error;
+  };
+  r.onend = function() { if (isRecording) { try { r.start(); } catch(x) {} } };
+  return r;
+}
+
+function toggleMic() {
+  if (!isRecording) {
+    if (!recognition) recognition = setupRecognition();
+    if (!recognition) return;
+    try {
+      recognition.start();
+      isRecording = true;
+      document.getElementById('mic-btn').classList.add('recording');
+      document.getElementById('mic-label').textContent = 'Stop recording';
+      document.getElementById('status-pill').classList.add('recording');
+      document.getElementById('status-dot').classList.add('live');
+      document.getElementById('status-text').textContent = 'Recording';
+      startTime = Date.now();
+      durationInterval = setInterval(function() {
+        var s = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('duration').textContent = Math.floor(s/60) + ':' + (s%60<10?'0':'') + s%60;
+      }, 1000);
+      animateWave(true);
+    } catch(x) { document.getElementById('tx-hint').textContent = 'Could not start mic: ' + x.message; }
+  } else {
+    recognition.stop();
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-label').textContent = 'Start recording';
+    document.getElementById('status-pill').classList.remove('recording');
+    document.getElementById('status-dot').classList.remove('live');
+    document.getElementById('status-text').textContent = 'Idle';
+    clearInterval(durationInterval);
+    animateWave(false);
+    tx.value = finalTranscript;
+    var wc = finalTranscript.trim() ? finalTranscript.trim().split(/\s+/).length : 0;
+    document.getElementById('tx-hint').textContent = 'Stopped. ' + wc + ' words captured. Use the AI buttons below.';
+  }
+}
+
+function animateWave(on) {
+  if (waveInterval) clearInterval(waveInterval);
+  if (!on) { waveBars.forEach(function(b){ b.style.height='3px'; b.style.background='var(--border2)'; }); return; }
+  waveInterval = setInterval(function() {
+    waveBars.forEach(function(b){ b.style.height=(Math.random()*24+3)+'px'; b.style.background='#22c55e'; });
+  }, 70);
+}
+
+var skipWords = new Set(['The','This','That','Here','There','When','What','How','Why','Who','But','And','For','With','From','They','Their','Then','Also','Just','Very','Monday','Tuesday','Wednesday','Thursday','Friday']);
+
+function detectAttendees(text) {
+  var changed = false;
+  [/\b([A-Z][a-z]{1,14})\s+([A-Z][a-z]{1,14})\b/g,
+   /(?:^|\n)\s*([A-Z][a-z]{1,14}):/gm,
+   /(?:this is|I'm|I am|my name is)\s+([A-Z][a-z]{1,14}(?:\s[A-Z][a-z]{1,14})?)/gi,
+   /\b([A-Z][a-z]{2,14})\s+(?:said|mentioned|asked|agreed|noted|confirmed)\b/g
+  ].forEach(function(re) {
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var name = (m[2] ? m[1]+' '+m[2] : m[1]).trim();
+      if (name.length > 2 && !skipWords.has(name.split(' ')[0]) && !attendees.has(name)) { attendees.add(name); changed = true; }
+    }
+  });
+  if (changed) {
+    var el = document.getElementById('attendee-list');
+    el.innerHTML = '';
+    attendees.forEach(function(name) {
+      var chip = document.createElement('div'); chip.className = 'chip';
+      var av = document.createElement('div'); av.className = 'chip-av';
+      av.textContent = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var lbl = document.createElement('span'); lbl.textContent = name;
+      chip.appendChild(av); chip.appendChild(lbl); el.appendChild(chip);
+    });
+    document.getElementById('attendee-count').textContent = attendees.size;
+  }
+}
+
+tx.addEventListener('input', function() {
+  finalTranscript = tx.value;
+  var wc = tx.value.trim() ? tx.value.trim().split(/\s+/).length : 0;
+  document.getElementById('word-count').textContent = wc;
+  detectAttendees(tx.value);
+});
+
+function clearAll() {
+  if (!confirm('Clear transcript and all results?')) return;
+  finalTranscript = ''; tx.value = ''; attendees.clear();
+  document.getElementById('attendee-list').innerHTML = '<span class="empty">Names appear as people are mentioned...</span>';
+  document.getElementById('attendee-count').textContent = '0';
+  document.getElementById('word-count').textContent = '0';
+  document.getElementById('duration').textContent = '0:00';
+  document.getElementById('tx-hint').textContent = 'Click Start recording to begin';
+  document.getElementById('result-prompt').classList.remove('visible');
+}
+
+function preparePrompt(type) {
+  var content = tx.value.trim();
+  if (!content) { alert('No transcript yet — start recording first!'); return; }
+  var names = Array.from(attendees).slice(0,5).join(', ') || 'the team';
+  var prompts = {
+    summary: 'Please summarize this meeting transcript. Structure your response with three sections:\n1. Topics discussed\n2. Key decisions made\n3. Notable points raised\n\nKeep each section concise (2-4 sentences).\n\nTranscript:\n\n' + content,
+    actions: 'Please extract all action items from this meeting transcript.\n\nFormat each as:\n[ ] Owner (if mentioned): Task — by deadline (if mentioned)\n\nIf no owner is clear, write "Unassigned". Be specific and actionable.\n\nTranscript:\n\n' + content,
+    email: 'Please draft a professional follow-up email for a meeting with ' + names + '.\n\nInclude: subject line, brief recap, key decisions, action items with owners, and a friendly close. Plain text only.\n\nTranscript:\n\n' + content
+  };
+  var titles = { summary: 'Summarize meeting prompt', actions: 'Extract action items prompt', email: 'Draft follow-up email prompt' };
+  currentPrompt = prompts[type];
+  document.getElementById('prompt-title').textContent = titles[type];
+  document.getElementById('prompt-box').textContent = currentPrompt;
+  document.getElementById('result-prompt').classList.add('visible');
+  document.getElementById('result-prompt').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  navigator.clipboard.writeText(currentPrompt).catch(function(){});
+  document.getElementById('copy-prompt-btn').textContent = 'Copied!';
+  setTimeout(function(){ document.getElementById('copy-prompt-btn').textContent = 'Copy prompt'; }, 2000);
+}
+
+function copyPromptText() {
+  navigator.clipboard.writeText(currentPrompt).catch(function(){});
+  document.getElementById('copy-prompt-btn').textContent = 'Copied!';
+  setTimeout(function(){ document.getElementById('copy-prompt-btn').textContent = 'Copy prompt'; }, 2000);
+}
+</script>
+</body>
+</html>
